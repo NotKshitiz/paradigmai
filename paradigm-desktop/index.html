@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Paradigm Desktop</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #16181c;
+      color: #e3e3e3;
+      margin: 0;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    h2 {
+      color: #f0f0f5;
+      letter-spacing: 2px;
+      margin-bottom: 40px;
+      font-size: 2.2rem;
+      border-left: 5px solid #7b6ef6;
+      padding-left: 16px;
+    }
+
+    label {
+      font-size: 1rem;
+      margin-top: 30px;
+      margin-bottom: 8px;
+      color: #bcbccd;
+      display: block;
+      letter-spacing: 1px;
+    }
+
+    input[type="text"],
+    textarea {
+      background: #202126;
+      color: #e3e3e3;
+      border: 1px solid #3a3a47;
+      border-radius: 8px;
+      padding: 14px 14px;
+      font-size: 1.1rem;
+      width: 100%;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #7b6ef6;
+      background: #1e1e2a;
+      box-shadow: 0 0 0 2px #7b6ef644;
+    }
+
+    button {
+      width: 100%;
+      background: linear-gradient(135deg, #2b2b40, #1b1b25);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 12px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #00000044;
+      transition: background 0.25s, transform 0.2s, box-shadow 0.25s;
+    }
+
+    button:hover,
+    button:focus {
+      background: linear-gradient(135deg, #42398e, #292946);
+      transform: scale(1.02);
+      box-shadow: 0 4px 16px #00000066;
+    }
+
+    #response {
+      margin-top: 32px;
+      background: #1c1d22;
+      color: #d1d4f0;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #2c2c35;
+      box-shadow: 0 2px 12px #00000033;
+      min-height: 40px;
+      white-space: pre-wrap;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 1.05rem;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 16px;
+      }
+      h2 {
+        font-size: 1.8rem;
+      }
+      #response {
+        padding: 12px;
+        font-size: 0.95rem;
+      }
+      button {
+        padding: 12px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Paradigm</h2>
+
+  <label for="modelPath">Path to Model Folder:</label>
+  <input type="text" id="modelPath" placeholder="e.g. C://Users//kshit//models//llama2" />
+  <button onclick="convertGGUF()">Convert to GGUF</button>
+
+  <label for="promptInput">Prompt:</label>
+  <textarea id="promptInput" rows="4" placeholder="Enter prompt here..."></textarea>
+  <button onclick="runInference()">Run Inference</button>
+
+  <div id="response"></div>
+
+  <script>
+    let modelConverted = false;
+    const responseDiv = document.getElementById('response');
+
+    async function convertGGUF() {
+      const path = document.getElementById('modelPath').value;
+      responseDiv.innerText = 'Converting to GGUF...\n';
+
+      try {
+        const res = await fetch('http://localhost:8001/path', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: path })
+        });
+
+        const data = await res.json();
+        if (data.message) modelConverted = true;
+
+        responseDiv.innerText += (data.message || data.error || JSON.stringify(data));
+      } catch (err) {
+        responseDiv.innerText = 'Error: ' + err.message;
+      }
+    }
+
+   async function runInference() {
+  const prompt = document.getElementById('promptInput').value;
+  responseDiv.innerText = ''; // Clear old output
+
+  if (!modelConverted) {
+    responseDiv.innerText = 'Please convert a model first.';
+    return;
+  }
+
+  const res = await fetch("http://localhost:8001/inference", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ input: prompt }),
+  });
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+
+  let logs = '';
+  let generated = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value, { stream: true });
+    const lines = chunk.split("\n").filter(line => line.startsWith("data: "));
+
+    for (const line of lines) {
+      let token = line.replace(/^data:\s*/, "");
+
+      if (token.includes("🧠") || token.includes("📤")) {
+        logs += token + '\n';
+      } else {
+        // Optional: fix spacing issues
+        if (!token.startsWith(" ") && !generated.endsWith(" ")) {
+          token = " " + token;
+        }
+        generated += token;
+      }
+
+      responseDiv.textContent = logs + '\n' + generated;
+    }
+  }
+}
+
+
+
+    // Show only meaningful Python messages
+  window.electronAPI.onPythonMessage((message) => {
+  // Optional: filter only unwanted noise like HTTP logs
+  if (
+    message.includes("127.0.0.1") ||
+    message.includes("GET /") ||
+    message.includes("POST /") ||
+    message.includes("INFO") ||
+    message.includes("ERROR")
+  ) return;
+
+  responseDiv.textContent += message + '\n';
+
+});
+
+
+  </script>
+</body>
+</html>

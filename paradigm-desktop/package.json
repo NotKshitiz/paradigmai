@@ -1,0 +1,48 @@
+{
+  "name": "paradigm-desktop",
+  "version": "1.0.0",
+  "description": "Desktop app to run local LLMs like GGUF or GPT models using ONNX or llama.cpp easily.",
+  "main": "main.js",
+  "author": "Kshitiz from Paradigm",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.paradigm.desktop",
+    "productName": "Paradigm",
+    "files": [
+      "**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "paradigm-backend.exe",
+        "to": "backend.exe"
+      }
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "icon": "assets/paradigm-icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "your-github-username",
+        "repo": "your-repo-name"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.1"
+  },
+  "devDependencies": {
+    "electron": "^37.2.3",
+    "electron-builder": "^26.0.12"
+  }
+}
