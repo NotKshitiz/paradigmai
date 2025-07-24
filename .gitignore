@@ -12,7 +12,14 @@ paradigm-env/
 # Node
 node_modules/
 out/
-dist/
+paradigm-desktop/python-dist/
+paradigm-desktop/backend/
+paradigm-desktop/node_modules/
+paradigm-desktop/out/
+backend/
+*.txt
+*.dist
+*.build
 
 # Electron build output
 *.exe
