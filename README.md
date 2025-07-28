@@ -64,5 +64,5 @@ Kshitiz Kumar
 
 ##  License
 
-Paradigm is dual-licensed under the terms of the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0) or the [MIT License](http://opensource.org/licenses/MIT) — at your option.
+Paradigm is dual-licensed under the terms of the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0) — at your option.
 This file may not be copied, modified, or distributed except according to those terms.
